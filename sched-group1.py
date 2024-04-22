@@ -1,5 +1,6 @@
 import random
 import matplotlib.pyplot as plt
+import copy
 
 class Appliance():
     """
@@ -127,6 +128,32 @@ def graph_task_1(ListOfCosts):
     plt.plot(NoDuplicatesListOfCosts, FrequencyOfCosts, color = 'grey')
     plt.show()
 
+#Small improvments function rewrote to be neater eaiser on the eyes and fixed some bugs.
+
+def testForImprovements(solution):
+    """
+    Swaps around the schdeule to check for small improvements
+    """
+    improvedSolutions = []
+    givenSchedule = solution.solutionSchedule
+    for i in range(solution.length - 1):
+        if (givenSchedule[i] == 0 and givenSchedule[i+1] != 0) or (givenSchedule[i] != 0 and givenSchedule[i+1] == 0):  #Checking if 2 adjectent indexs has one as 0 and the other as a number not 0
+            tempSolution = copy.deepcopy(solution)
+            tempSolution.solutionSchedule[i],  tempSolution.solutionSchedule[i + 1] = tempSolution.solutionSchedule[i + 1], tempSolution.solutionSchedule[i] #Swaping both the indexs
+            tempSolution.calcuateCost()
+            if tempSolution.cost < solution.cost:
+                improvedSolutions.append(tempSolution)
+            else:
+                del tempSolution
+    
+    bestCost = 9999999999999999
+    for i in improvedSolutions:
+        if i.cost < bestCost:
+            bestCost = i.cost
+    return improvedSolutions , bestCost
+
+
+
 
 testAppliance, testTimings = open_file("p2.txt")
 costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
@@ -135,6 +162,9 @@ print(best_cost)
 graph_task_1(costs)
 print(schedules[0])
 schedules[0].graph()
+betterSolutions, bestImprovement = testForImprovements(schedules[0])
+print(betterSolutions[0])
+
 #The things above this are what we want to print off to complete task 1 so thats sorted.
 
 
