@@ -143,7 +143,6 @@ def testForImprovements(solution):
             index = copy.copy(i) #copy the index
             while givenSchedule[index] == 0 and index > 0: # Find the next non zero entry in the list
                 index -= 1
-            print(index, i)
             if abs(i - index) == 0:
                 listOfAllCosts = [solution.timings.costPerPeriod[i]]
             else:
@@ -157,7 +156,6 @@ def testForImprovements(solution):
             index = copy.copy(i) #copy the index
             while givenSchedule[index] == 0 and index < (len(givenSchedule) - 1): # Find the next non zero entry in the list
                 index += 1
-            #print(i, index)
             if abs(i - index) == 0:
                 listOfAllCosts = [solution.timings.costPerPeriod[i]]
             else:
