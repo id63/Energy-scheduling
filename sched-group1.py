@@ -140,9 +140,10 @@ def testForImprovements(solution):
     for i in range(solution.length - 1):
         tempSolution = copy.deepcopy(solution)
         if (givenSchedule[i] == 0 and givenSchedule[i+1] != 0):  #Checking if 2 adjectent indexs has one as 0 and the other as a number not 0
-            index = copy.copy(i + 1) #copy the index
+            index = copy.copy(i - 1) #copy the index
             while givenSchedule[index] == 0: # Find the next non zero entry
                 index -= 1
+            
             listOfAllCosts = solution.timings.costPerPeriod[index:i]
             smallestCost = min(listOfAllCosts) #Find the smallest cost from the list of all 0 costs
             indexOfSmallestCost = solution.timings.costPerPeriod.index(smallestCost) #Gets the smallest cost index
