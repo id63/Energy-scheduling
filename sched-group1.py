@@ -128,9 +128,6 @@ def graph_task_1(ListOfCosts):
     plt.plot(NoDuplicatesListOfCosts, FrequencyOfCosts, color = 'grey')
     plt.show()
 
-#Small improvments function rewrote to be neater eaiser on the eyes and fixed some bugs.
-
-
 def testForImprovements(solution):
     """
     Swaps around the schdeule to check for small improvements
@@ -166,21 +163,19 @@ def testForImprovements(solution):
         
             tempSolution.solutionSchedule[i], tempSolution.solutionSchedule[indexOfSmallestCost] = tempSolution.solutionSchedule[indexOfSmallestCost], tempSolution.solutionSchedule[i] #Swaping the indexs
         
-        tempSolution.calcuateCost()     
+        tempSolution.calcuateCost()
         if tempSolution.cost < solution.cost:
                 improvedSolutions.append(tempSolution)
         else:
             del tempSolution
     
     if improvedSolutions == []:
-        improvedSolutions.append(solution) #just so we return the initall solution to prevent bugs
+        improvedSolutions.append(solution) #just so we return the initial solution to prevent bugs
     bestCost = 9999999999999999
     for i in improvedSolutions:
         if i.cost < bestCost:
             bestCost = i.cost
     return improvedSolutions , bestCost
-
-
 
 def findBestSolution(solutions):
     bestCost = 9999999999999
@@ -188,15 +183,59 @@ def findBestSolution(solutions):
         if i.cost < bestCost:
             bestSolution = i
     return bestSolution
-testAppliance, testTimings = open_file("p3.txt")
-costs, schedules, best_cost = task1(testAppliance, testTimings, 1000)
 
-print(best_cost)
+def graph_2_different_solutions(solution1, solution2):
+    """
+    Takes the solutions and graphs them together to compare between.
+    """
+    xAxis =[i for i in range(solution1.length)]
+    
+    fig, (ax_1, ax_2) = plt.subplots(1, 2, figsize = (15, 8.1))
+    plt.subplots_adjust(left=0.04, right=0.965, bottom=0.06, top=0.9, wspace=0.2, hspace=0.2)
+
+    ax_1b = ax_1.twinx()
+    ax_1.bar(xAxis, solution1.solutionSchedule, color = "red", width = 0.5, label = 'Energy Required')
+    ax_1b.plot(xAxis, solution1.timings.costPerPeriod, ".-b", linewidth = 3, markersize = 15, label = 'Energy Cost Over Time')
+    ax_1.set_title('Energy Costs and when to use an Appliance for the lowest cost')
+    ax_1.set_xlabel("Time Period")
+    ax_1.set_ylabel("Units Required")
+    ax_1b.set_ylabel("Cost Per Unit")
+
+    ax_2b = ax_2.twinx()
+    ax_2.bar(xAxis, solution2.solutionSchedule, color = "red", width = 0.5, label = 'Energy Required')
+    ax_2b.plot(xAxis, solution2.timings.costPerPeriod, ".-b", linewidth = 3, markersize = 15, label = 'Energy Cost Over Time')
+    ax_2.set_title('Energy Costs and when to use an Appliance for the lowest cost')
+    ax_2.legend(bbox_to_anchor=(0.06, 1.07))
+    ax_2b.legend(bbox_to_anchor=(0.1, 1.12))
+    ax_2.set_xlabel("Time Period")
+    ax_2.set_ylabel("Units Required")
+    ax_2b.set_ylabel("Cost Per Unit")
+
+    plt.show()
+
+    
+
+testAppliance, testTimings = open_file("p2.txt")
+#costs, schedules, best_cost = task1(testAppliance, testTimings, 10000000)
+#print(best_cost)
 #graph_task_1(costs)
-print(schedules[0])
+#print(schedules[0])
 #schedules[0].graph()
-betterSolutions, bestImprovement = testForImprovements(schedules[0])
-print(findBestSolution(betterSolutions))
+#betterSolutions, bestImprovement = testForImprovements(schedules[0])
+#print(findBestSolution(betterSolutions))
+#print(betterSolutions[0])
+
+solution1 = Solution(testAppliance, testTimings)
+print(solution1)
+
+solutions_from_solution1, best_cost_from_solution1 = testForImprovements(solution1)
+print(best_cost_from_solution1)
+print(solutions_from_solution1)
+solution2 = findBestSolution(solutions_from_solution1)
+print("hi")
+print(solution2)
+
+graph_2_different_solutions(solution1, solution2)
 
 #The things above this are what we want to print off to complete task 1 so thats sorted.
 
