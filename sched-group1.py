@@ -140,23 +140,32 @@ def testForImprovements(solution):
     for i in range(solution.length - 1):
         tempSolution = copy.deepcopy(solution)
         if (givenSchedule[i] == 0 and givenSchedule[i+1] != 0):  #Checking if 2 adjectent indexs has one as 0 and the other as a number not 0
-            index = copy.copy(i - 1) #copy the index
-            while givenSchedule[index] == 0: # Find the next non zero entry
+            index = copy.copy(i) #copy the index
+            while givenSchedule[index] == 0 and index > 0: # Find the next non zero entry in the list
                 index -= 1
-            
-            listOfAllCosts = solution.timings.costPerPeriod[index:i]
+            print(index, i)
+            if abs(i - index) == 0:
+                listOfAllCosts = [solution.timings.costPerPeriod[i]]
+            else:
+                listOfAllCosts = solution.timings.costPerPeriod[index:i]
             smallestCost = min(listOfAllCosts) #Find the smallest cost from the list of all 0 costs
-            indexOfSmallestCost = solution.timings.costPerPeriod.index(smallestCost) #Gets the smallest cost index
+
+            indexOfSmallestCost = index + listOfAllCosts.index(smallestCost) #Gets the smallest cost index        
             tempSolution.solutionSchedule[i], tempSolution.solutionSchedule[indexOfSmallestCost] = tempSolution.solutionSchedule[indexOfSmallestCost], tempSolution.solutionSchedule[i] #Swaping the indexs
-        
-        
+
         elif (givenSchedule[i] != 0 and givenSchedule[i+1] == 0): #If there are 0s infront of the number
-            index = copy.copy(i + 1) #copy the index
-            while givenSchedule[index] == 0: # Find the next non zero entry
+            index = copy.copy(i) #copy the index
+            while givenSchedule[index] == 0 and index < (len(givenSchedule) - 1): # Find the next non zero entry in the list
                 index += 1
-            listOfAllCosts = solution.timings.costPerPeriod[i:index]
+            #print(i, index)
+            if abs(i - index) == 0:
+                listOfAllCosts = [solution.timings.costPerPeriod[i]]
+            else:
+                listOfAllCosts = solution.timings.costPerPeriod[i:index]
             smallestCost = min(listOfAllCosts) #Find the smallest cost from the list of all 0 costs
-            indexOfSmallestCost = solution.timings.costPerPeriod.index(smallestCost) #Gets the smallest cost index
+
+            indexOfSmallestCost = i + listOfAllCosts.index(smallestCost) #Gets the smallest cost index
+        
             tempSolution.solutionSchedule[i], tempSolution.solutionSchedule[indexOfSmallestCost] = tempSolution.solutionSchedule[indexOfSmallestCost], tempSolution.solutionSchedule[i] #Swaping the indexs
         
         tempSolution.calcuateCost()     
@@ -181,16 +190,15 @@ def findBestSolution(solutions):
         if i.cost < bestCost:
             bestSolution = i
     return bestSolution
-testAppliance, testTimings = open_file("p2.txt")
-costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
+testAppliance, testTimings = open_file("p3.txt")
+costs, schedules, best_cost = task1(testAppliance, testTimings, 1000)
 
 print(best_cost)
-graph_task_1(costs)
+#graph_task_1(costs)
 print(schedules[0])
 #schedules[0].graph()
 betterSolutions, bestImprovement = testForImprovements(schedules[0])
 print(findBestSolution(betterSolutions))
-print(betterSolutions[0])
 
 #The things above this are what we want to print off to complete task 1 so thats sorted.
 
