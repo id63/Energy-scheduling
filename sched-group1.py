@@ -185,12 +185,92 @@ def testForImprovements2(solution):
     """
     Prioritising the highest energy cost phase, this function attempts to swap 2 timings of the appliance to give a cheaper result.
     """
+    costOfElectricity = solution.timings.costPerPeriod
+    appliancePhases = solution.solutionSchedule
+    #Finding gaps in appliancePhases
+    findingGapsResult = findGaps(appliancePhases, costOfElectricity)
+    #Find the best swap
+    bestSwap = findBestCostFromSplitArray(findingGapsResult)
+    #Copying the solution and making the swap
+    newSolution = copy.deepcopy(solution)
+    newSolution.solutionSchedule[bestSwap["indexSwap"][0]] , newSolution.solutionSchedule[bestSwap["indexSwap"][1]] = newSolution.solutionSchedule[bestSwap["indexSwap"][1]], newSolution.solutionSchedule[bestSwap["indexSwap"][0]]
+    newSolution.calculateCost()
+    return newSolution
+
+
+
     #something where we get a sorted list of the phases energy cost and then take [-1] and try moving it to a 0 nearby but if it hits a 1 
     #then the code stops cos we dont want it to swap with a 1 so we can just try moving it within that range and then if it cant move that 
     #one or if the solution doesnt improve the cost then we del that from the list of phases energy costs and then continue that on and on 
     #and it should eventually move everything it can to its cheapest spot so we can get a definite cheapest after doing the random for a 
     #couple million
 
+
+def findGaps(appliancePhases, electricityPrices):
+    """
+    This function is how we find gaps and return them as a 2d array 
+    """
+    nonZeroCount = 0 #Used for tracking how many non 0 entries we pass when we see 2 we push into the dictionary
+    result = []
+    # Temp dictionary represents 
+    tempDictionary = {
+        "appliancePhases": [],
+        "electricityPrices": [],
+        "startIndex": 0,
+        "endIndex": 0
+    }
+    for num, i in enumerate(appliancePhases):
+        if num == len(appliancePhases) - 1: #If we are at the end of the list push the temp dictionary to the result
+            tempDictionary["appliancePhases"].append(i)
+            tempDictionary["electricityPrices"].append(electricityPrices[num])
+            tempDictionary["endIndex"] = num
+            result.append(tempDictionary)
+        elif i != 0 and nonZeroCount == 1: #If we had seen 2 non zero vaules we push the temp dictionary to the result
+            tempDictionary["appliancePhases"].append(i)
+            tempDictionary["electricityPrices"].append(electricityPrices[num])
+            tempDictionary["endIndex"] = num
+            result.append(tempDictionary) #Push the dictionary to the result
+            #Now we reset the tempDictionary
+            tempDictionary = {
+                "appliancePhases": [i],
+                "electricityPrices": [electricityPrices[num]],
+                "startIndex": num,
+                "endIndex": 0
+            }
+        elif i !=0 or (num == 0 and i ==0): #If we see a non 0 or a 0 at the start of the array add the starting index
+            tempDictionary["appliancePhases"].append(i)
+            tempDictionary["electricityPrices"].append(electricityPrices[num])
+            tempDictionary["startIndex"] = num
+            nonZeroCount += 1
+        else: #else add data to the dictionary
+            tempDictionary["appliancePhases"].append(i)
+            tempDictionary["electricityPrices"].append(electricityPrices[num])
+    return result
+
+
+def findBestCostFromSplitArray(splitArray):
+    """
+    This function now finds the best improvement after the arrays have been turned into dictionary from the find costs
+    """
+    bestChange = {
+        "indexSwap": [0, 0],
+        "changeInCost": 0
+    }
+    for i in splitArray:
+            possibleSwaps = [i["electricityPrices"][f] for f,x in enumerate(i["appliancePhases"]) if x == 0] #Gets the prices of all the current avalible swaps
+            leftSideCurrentCost = i["appliancePhases"][0] * i["electricityPrices"][0]
+            rightSideCurrentCost = i["appliancePhases"][-1] * i["electricityPrices"][-1]
+            if possibleSwaps != []:
+                for num,x in enumerate(possibleSwaps):
+                    possilbeCostForPartLeftSide = i["appliancePhases"][0] * x
+                    possilbeCostForPartRightSide = i["appliancePhases"][-1] * x
+                    if possilbeCostForPartLeftSide < leftSideCurrentCost and (leftSideCurrentCost - possilbeCostForPartLeftSide) > bestChange["changeInCost"]: #Checks the left side to see if there are any better costs
+                        bestChange["changeInCost"] = (leftSideCurrentCost - possilbeCostForPartLeftSide)
+                        bestChange["indexSwap"] = [i["startIndex"], i["startIndex"] + num + 1]
+                    elif possilbeCostForPartRightSide < rightSideCurrentCost and (rightSideCurrentCost - possilbeCostForPartRightSide) > bestChange["changeInCost"]: #Checks the right side for any better costs
+                        bestChange["changeInCost"] = (rightSideCurrentCost - possilbeCostForPartRightSide)
+                        bestChange["indexSwap"] = [i["endIndex"], i["startIndex"] + num + 1]
+    return bestChange
 
 def findBestSolution(solutions):
     bestCost = 9999999999999
@@ -232,53 +312,40 @@ def graph_iterations_of_small_improvements(solution, iterations):
     """
     Runs the testForImprovements function a given number of times, each time taking the new best solution
     """
-    costs = []
+    
     current_best_solution = solution
+    costs = [solution.cost]
     for i in range(iterations + 1):
-        improved_solutions, improved_costs = testForImprovements(current_best_solution)
-        if improved_solutions == []:
-            improved_solutions = [current_best_solution]
-        print("we are ", round(i / (iterations) * 100, 2), "percent complete")
-        current_best_solution = findBestSolution(improved_solutions)
-        costs.append(current_best_solution.cost)
-    return costs
+        improved_solution = testForImprovements2(current_best_solution)
+        costs.append(improved_solution.cost)
+        current_best_solution = improved_solution
+    
+    plt.xlabel("Number of iterations")
+    plt.ylabel("Cost of Schedule")
+    plt.plot(costs)
+    plt.show()
+    return current_best_solution
 
 
 
-testAppliance, testTimings = open_file("p2.txt")
+testAppliance, testTimings = open_file("p3.txt")
 costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
 print(best_cost)
 graph_task_1(costs)
-print(schedules[0])
-schedules[0].graph()
+# print(schedules[0])
+# schedules[0].graph()
 
 #The things above this are what we want to print off to complete task 1 so thats sorted.
 
+bestRandomSolution = findBestSolution(schedules)
 
-#betterSolutions, bestImprovement = testForImprovements(schedules[0])
-#print(findBestSolution(betterSolutions))
-#print(betterSolutions[0])
+bestFoundSolution = graph_iterations_of_small_improvements(bestRandomSolution, 50)
 
-
-solution1 = Solution(testAppliance, testTimings)
-#iterated_solution = graph_iterations_of_small_improvements(solution1, 10000)
-print(solution1)
-print(solution1.onOff)
-
-#solutions_from_solution1, best_cost_from_solution1 = testForImprovements(solution1)
-#print(best_cost_from_solution1)
-#print(solutions_from_solution1)
-#solution2 = findBestSolution(solutions_from_solution1)
-#print("hi")
-#print(solution2)
-
-#graph_2_different_solutions(solution1, solution2)
-
-#print(iterated_solution)
-#print(graph_iterations_against_best_cost(solution1, 10000))
-#graph_2_different_solutions(solution1, iterated_solution)
+graph_2_different_solutions(bestRandomSolution, bestFoundSolution)
 
 
-#testTimings.graph(testAppliance)
-#print(Solution(testAppliance, testTimings).cost)
+
+
+
+
