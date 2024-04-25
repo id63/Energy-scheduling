@@ -1,6 +1,7 @@
 import random
 import matplotlib.pyplot as plt
 import copy
+import time
 
 class Appliance():
     """
@@ -195,9 +196,6 @@ def testForImprovements3(solution):
         k = 1
         if required_index - 1 >= 0: #so that it doesnt try to check outside the list
             while current_solution.solutionSchedule[required_index - k] == 0:
-                print("minus")
-                print(current_solution.solutionSchedule[required_index - k])
-                print(k)
                 current_solution.solutionSchedule[required_index - k], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index - k]
                 current_solution.calculateCost()
                 if current_solution.cost <= best_cost:
@@ -352,11 +350,13 @@ def graph_iterations_of_small_improvements(solution, iterations, searchFunction)
     """
     current_best_solution = solution
     costs = [solution.cost]
+    startTime = time.time()
     for i in range(iterations + 1):
         improved_solution = searchFunction(current_best_solution)
         costs.append(improved_solution.cost)
         current_best_solution = improved_solution
-    
+    endTime = time.time()
+    print(f"It took {endTime - startTime} seconds to complete {iterations} of this function")
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
     plt.plot(costs)
@@ -407,7 +407,7 @@ testSolution = Solution(testAppliance, testTimings)
 #completely_random_solution = Solution(testAppliance, testTimings)
 testForImprovementsTwoBestSolution = graph_iterations_of_small_improvements(testSolution, 1000, testForImprovements2)
 veryBasicSearchBestSolution = graph_iterations_of_small_improvements(testSolution, 1000, veryBasicSearch)
-print(testForImprovementsTwoBestSolution.cost, veryBasicSearchBestSolution.cost)
+print(f"Testforimprovements2()'s best cost is {testForImprovementsTwoBestSolution.cost} and veryBasicSearch()'s best cost is {veryBasicSearchBestSolution.cost}")
 graph_2_different_solutions(testForImprovementsTwoBestSolution, veryBasicSearchBestSolution)
 
 #bestFoundSolutionMethod1 = graph_iterations_of_small_improvements(bestRandomSolution, 1000)
