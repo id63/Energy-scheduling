@@ -35,18 +35,18 @@ class Solution():
         self.timings = timings
         self.length = timings.length
         self.appliance = appliance
-        self.onOff = "Unknown"
-        self.findOnOff()
+        self.onOff = [1 for i in self.appliance.phases] + [0 for i in range(self.timings.length - self.appliance.ScheduleLength)]
+        random.shuffle(self.onOff)
+        self.onOffToSolutionSchedule()
         self.cost = "Unknown"
         self.calculateCost()
         
 
-    def findOnOff(self):
+    def onOffToSolutionSchedule(self):
         """
-        This method sets the on/off times of the appliance in the solution object.
+        This method uses the onOff Arry to generate a new solution s
         """
-        onOff = [1 for i in self.appliance.phases] + [0 for i in range(self.timings.length - self.appliance.ScheduleLength)] #Create an array with the energy consupmtion for the appiliance and 0s when its not on
-        random.shuffle(onOff)
+        onOff = self.onOff
         self.solutionSchedule = []
         appliancePhaseIndex = 0
         for i in onOff:
@@ -55,7 +55,6 @@ class Solution():
                 appliancePhaseIndex += 1
             else:
                 self.solutionSchedule.append(0)
-        self.onOff = onOff
 
     def calculateCost(self):
         """
@@ -133,37 +132,23 @@ def graph_task_1(ListOfCosts):
 
 def testForImprovements(solution):
     """
-    Prioritising the highest energy cost phase, this function checks the values in the phase directly before and direcly after it, and if one or more of those is zero, it swaps it with the phase currently selected, checks if the price is improved, and if so, adds it to a list of all possible improvements from that one solution, and returns the one with the best cost from that.
+    This function swaps a one and a zero and sees if it gives a better cost then returns the best change found
     """
-    improved_solutions = [solution] #this is so it doesnt have an empty list if there are no improvements
-    best_cost = solution.cost
-    current_solution = copy.deepcopy(solution)
-    temp_solution = copy.deepcopy(solution)
-    phases = sorted(solution.appliance.phases, reverse=True) #reversing the phases means that its going down from the most energy expensive phase to the cheapest so it prioritises the best improvements first
+    improvedSolutions = [solution] #So testForImprovements doesnt return nothing
+    givenSchedule = solution.solutionSchedule
+    for i in range(solution.length - 1):
+        if (givenSchedule[i] == 0 and givenSchedule[i+1] != 0) or (givenSchedule[i] != 0 and givenSchedule[i+1] == 0):  #Checking if 2 adjectent indexs has one as 0 and the other as a number not 0
+            tempSolution = copy.deepcopy(solution)
+            tempSolution.solutionSchedule[i],  tempSolution.solutionSchedule[i + 1] = tempSolution.solutionSchedule[i + 1], tempSolution.solutionSchedule[i] #Swaping both the indexs
+            tempSolution.calculateCost()
+            if tempSolution.cost < solution.cost:
+                improvedSolutions.append(tempSolution)
+            else:
+                del tempSolution
 
-    for i in phases:
-        required_index = temp_solution.solutionSchedule.index(i) #finding where the chosen phase is in the solution Schedule
-        temp_solution.solutionSchedule[required_index] = 0 #instead of deleting the value we set it to zero so we can still count where the next index we want is from this list
-        if required_index + 2 < current_solution.length:    #so that it doesnt try to check outside the list
-            if current_solution.solutionSchedule[required_index + 1] == 0:
-                current_solution.solutionSchedule[required_index + 1], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index + 1]
-                current_solution.calculateCost()
-                if current_solution.cost <= best_cost:
-                    improved_solutions.append(current_solution)
-                    best_cost = current_solution.cost
-                current_solution = copy.deepcopy(solution) #resetting the solution back to original so we can run it again checking each different branch for the cheapest solution
+    bestSoultion = findBestSolution(improvedSolutions)
 
-        if required_index - 1 >= 0: #so it doesnt try to check outside the list
-            if current_solution.solutionSchedule[required_index - 1] == 0:
-                current_solution.solutionSchedule[required_index - 1], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index - 1]
-                current_solution.calculateCost()
-                if current_solution.cost <= best_cost:
-                    improved_solutions.append(current_solution)
-                    best_cost = current_solution.cost
-                current_solution = copy.deepcopy(solution)
-
-    bestSolutionFound = findBestSolution(improved_solutions)
-    return bestSolutionFound
+    return bestSoultion 
 
 def testForImprovements2(solution):
     """
@@ -224,6 +209,23 @@ def testForImprovements3(solution):
                     break
 
     return improved_solutions, best_cost
+
+def veryBasicSearch(solution):
+    """
+    This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
+    """
+    onIndexList = [i for i in range(solution.length) if solution.onOff[i] == 1] #Getting a list of all the indexs where the solution is on
+    offIndexList = [i for i in range(solution.length) if solution.onOff[i] == 0] #Getting a list of all the indexs where the solution is off
+    onIndexChoice = random.choice(onIndexList)
+    offIndexChoice = random.choice(offIndexList)
+    tempSolution = copy.deepcopy(solution)
+    tempSolution.onOff[onIndexChoice], tempSolution.onOff[offIndexChoice] = tempSolution.onOff[offIndexChoice], tempSolution.onOff[onIndexChoice] #Swapping the indexs
+    tempSolution.onOffToSolutionSchedule()
+    tempSolution.calculateCost()
+    if tempSolution.cost < solution.cost:
+        return tempSolution
+    else:
+        return solution
 
 def findGaps(appliancePhases, electricityPrices):
     """
@@ -295,6 +297,7 @@ def findBestSolution(solutions):
     Given a list of solutions, the function checks the costs of them all, and outputs the one with the lowest cost, and if there is more than one with that cost, outputs the first.
     """
     bestCost = 9999999999999
+    bestSolution = solutions[0]
     for i in solutions:
         if i.cost < bestCost:
             bestSolution = i
@@ -342,14 +345,14 @@ def graph_2_different_solutions(solution1, solution2):
 
     plt.show()
 
-def graph_iterations_of_small_improvements(solution, iterations):
+def graph_iterations_of_small_improvements(solution, iterations, searchFunction):
     """
     Runs the testForImprovements function a given number of times, each time taking the new best solution, and then graphing the change in the cost against the iterations.
     """
     current_best_solution = solution
     costs = [solution.cost]
     for i in range(iterations + 1):
-        improved_solution = testForImprovements2(current_best_solution)
+        improved_solution = searchFunction(current_best_solution)
         costs.append(improved_solution.cost)
         current_best_solution = improved_solution
     
@@ -383,10 +386,10 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 # End of code for functions and classes
 
 
-#testAppliance, testTimings = open_file("p2.txt")
+testAppliance, testTimings = open_file("p3.txt")
 #costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
-
+testSolution = Solution(testAppliance, testTimings)
 
 #print(best_cost)
 #graph_task_1(costs)
@@ -401,6 +404,10 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 
 #bestRandomSolution = findBestSolution(schedules)
 #completely_random_solution = Solution(testAppliance, testTimings)
+testForImprovementsTwoBestSolution = graph_iterations_of_small_improvements(testSolution, 1000, testForImprovements2)
+veryBasicSearchBestSolution = graph_iterations_of_small_improvements(testSolution, 1000, veryBasicSearch)
+print(testForImprovementsTwoBestSolution.cost, veryBasicSearchBestSolution.cost)
+graph_2_different_solutions(testForImprovementsTwoBestSolution, veryBasicSearchBestSolution)
 
 #bestFoundSolutionMethod1 = graph_iterations_of_small_improvements(bestRandomSolution, 1000)
 #random_through_small_changes_graph = graph_iterations_of_small_improvements(completely_random_solution, 1000)
