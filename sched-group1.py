@@ -207,8 +207,9 @@ def testForImprovements3(solution):
                 k += 1
                 if (required_index - k) < 0:    #fixes it trying to find things outside of the list when we change k
                     break
-
-    return improved_solutions, best_cost
+    
+    bestSolutionFound = findBestSolution(improved_solutions)
+    return bestSolutionFound
 
 def veryBasicSearch(solution):
     """
