@@ -208,9 +208,15 @@ def testForImprovements3(solution):
                     improved_solutions.append(current_solution)
                     best_cost = current_solution.cost
                 current_solution = copy.deepcopy(solution)  #resetting the solution back to original so we can run it again checking each different branch for the cheapest solution
-                k += 1  
+                k += 1
+                if (required_index + k + 1) >= current_solution.length: #fixes it trying to find things outside of the list when we change k
+                    break
+        k = 1
         if required_index - 1 >= 0: #so that it doesnt try to check outside the list
             while current_solution.solutionSchedule[required_index - k] == 0:
+                print("minus")
+                print(current_solution.solutionSchedule[required_index - k])
+                print(k)
                 current_solution.solutionSchedule[required_index - k], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index - k]
                 current_solution.calculateCost()
                 if current_solution.cost <= best_cost:
@@ -218,6 +224,8 @@ def testForImprovements3(solution):
                     best_cost = current_solution.cost
                 current_solution = copy.deepcopy(solution)  #resetting the solution back to original so we can run it again checking each different branch for the cheapest solution
                 k += 1
+                if (required_index - k) < 0:    #fixes it trying to find things outside of the list when we change k
+                    break
 
     return improved_solutions, best_cost
 
@@ -354,23 +362,36 @@ def findBestSolutions(solutions):
     return bestSolutions
 
 testAppliance, testTimings = open_file("p2.txt")
-costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
+#costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
-print(best_cost)
-graph_task_1(costs)
-# print(schedules[0])
-# schedules[0].graph()
+#print(best_cost)
+#graph_task_1(costs)
+#print(schedules[0])
+#schedules[0].graph()
 
-#The things above this are what we want to print off to complete task 1 so thats sorted.
+#The things above this in comments are what you want to print off to complete task 1.
 
-bestRandomSolution = findBestSolution(schedules)
+#bestRandomSolution = findBestSolution(schedules)
 
-bestFoundSolutionMethod1 = graph_iterations_of_small_improvements(bestRandomSolution, 50)
+#bestFoundSolutionMethod1 = graph_iterations_of_small_improvements(bestRandomSolution, 50)
 
-graph_2_different_solutions(bestRandomSolution, bestFoundSolutionMethod1)
+#graph_2_different_solutions(bestRandomSolution, bestFoundSolutionMethod1)
 
-print(bestRandomSolution.cost, bestFoundSolutionMethod1.cost)
+#print(bestRandomSolution.cost, bestFoundSolutionMethod1.cost)
+
+
+solution1 = Solution(testAppliance, testTimings)
+print(solution1)
+
+solutions_from_solution1, best_cost_from_solution1 = testForImprovements3(solution1)
+print(solutions_from_solution1)
+print(best_cost_from_solution1)
+best_solutions = findBestSolutions(solutions_from_solution1)
+print(best_solutions)
+
+print(solution1)
 
 
 
+graph_2_different_solutions(solution1, best_solutions)
 
