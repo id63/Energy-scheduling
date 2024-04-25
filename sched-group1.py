@@ -210,6 +210,9 @@ def testForImprovements3(solution):
         k = 1
         if required_index - 1 >= 0: #so that it doesnt try to check outside the list
             while current_solution.solutionSchedule[required_index - k] == 0:
+                print("minus")
+                print(current_solution.solutionSchedule[required_index - k])
+                print(k)
                 current_solution.solutionSchedule[required_index - k], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index - k]
                 current_solution.calculateCost()
                 if current_solution.cost <= best_cost:
@@ -383,10 +386,13 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 #testAppliance, testTimings = open_file("p2.txt")
 #costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
+
+
 #print(best_cost)
 #graph_task_1(costs)
 #print(schedules[0])
 #schedules[0].graph()
+
 
 #The things above this in comments are what you want to print off to complete task 1.
 
@@ -404,6 +410,7 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 
 #print(bestRandomSolution.cost, bestFoundSolutionMethod1.cost)
 
+
 #graph_iterations_against_random_selection("p2.txt", 100000)
 
 #solution1 = Solution(testAppliance, testTimings)
@@ -414,6 +421,7 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 #print(best_cost_from_solution1)
 #best_solutions = findBestSolutions(solutions_from_solution1)
 #print(best_solutions)
+
 
 #print(solution1)
 #graph_2_different_solutions(solution1, best_solutions)
