@@ -2,6 +2,7 @@ import random
 import matplotlib.pyplot as plt
 import copy
 import time
+import math
 
 class Appliance():
     """
@@ -32,11 +33,15 @@ class Solution():
         > The object involved in the solution
         > Multiple ways to generate a solution
     """
-    def __init__(self, appliance, timings):
+    def __init__(self, appliance, timings, shuffle = True):
         self.timings = timings
         self.length = timings.length
         self.appliance = appliance
         self.onOff = [1 for i in self.appliance.phases] + [0 for i in range(self.timings.length - self.appliance.ScheduleLength)]
+        if shuffle == True:
+            self.getShuffledOnOff()
+        else:
+            self.getBlockedOnOff()
         self.onOffToSolutionSchedule()
         self.cost = "Unknown"
         self.calculateCost()
@@ -65,8 +70,6 @@ class Solution():
         print(listOfBlocks)
         index = listOfCosts.index(min(listOfCosts))
         self.onOff = listOfBlocks[index]
-        self.onOffToSolutionSchedule()
-        self.calculateCost()
 
 
     def onOffToSolutionSchedule(self):
@@ -299,9 +302,9 @@ def testForImprovements3(solution):
     bestSolutionFound = findBestSolution(improved_solutions)
     return bestSolutionFound
 
-def veryBasicSearch(solution):
+def findNeighbour(solution):
     """
-    This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
+    This function takes a solution and returns a random neighbouring solution
     """
     onIndexList = [i for i in range(solution.length) if solution.onOff[i] == 1] #Getting a list of all the indexs where the solution is on
     offIndexList = [i for i in range(solution.length) if solution.onOff[i] == 0] #Getting a list of all the indexs where the solution is off
@@ -311,10 +314,29 @@ def veryBasicSearch(solution):
     tempSolution.onOff[onIndexChoice], tempSolution.onOff[offIndexChoice] = tempSolution.onOff[offIndexChoice], tempSolution.onOff[onIndexChoice] #Swapping the indexs
     tempSolution.onOffToSolutionSchedule()
     tempSolution.calculateCost()
-    if tempSolution.cost < solution.cost:
-        return tempSolution
+    return tempSolution
+
+def veryBasicSearch(solution):
+    """
+    This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
+    """
+    neighbourSoultion = findNeighbour(solution)
+    if neighbourSoultion.cost < solution.cost:
+        return neighbourSoultion
     else:
         return solution
+
+
+def simulatedAnnealingSearch(solution, iterations):
+    """
+    A local search function using a simulated annealing techinque 
+    """
+    temperature = 1
+    minTemperature = 0.0001
+    alpha = 0.9
+    while temperature > minTemperature:
+        for i in range(iterations):
+            
 
 def findBestSolution(solutions):
     """
@@ -381,7 +403,7 @@ def graph_iterations_of_small_improvements(solution, iterations, searchFunction)
         costs.append(improved_solution.cost)
         current_best_solution = improved_solution
     endTime = time.time()
-    print(f"It took {endTime - startTime} seconds to complete {iterations} of this function")
+    print(f"It took {endTime - startTime} seconds to complete {iterations} iterations of this {searchFunction.__name__}")
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
     plt.plot(costs)
@@ -412,7 +434,7 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 # End of code for functions and classes
 
 
-testAppliance, testTimings = open_file("p1.txt")
+testAppliance, testTimings = open_file("p3.txt")
 #costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
 testSolution = Solution(testAppliance, testTimings)
