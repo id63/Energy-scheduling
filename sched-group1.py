@@ -51,6 +51,9 @@ class Solution():
         This method shuffles the onOff phases randomly.
         """
         random.shuffle(self.onOff)
+        self.onOffToSolutionSchedule()
+        self.calculateCost()
+
 
     def getBlockedOnOff(self):
         """
@@ -67,7 +70,6 @@ class Solution():
             listOfBlocks.append(currentOnOff)
             self.onOff.insert(0, self.onOff[-1])
             del self.onOff[-1]
-        print(listOfBlocks)
         index = listOfCosts.index(min(listOfCosts))
         self.onOff = listOfBlocks[index]
 
@@ -76,10 +78,9 @@ class Solution():
         """
         This method uses the onOff Arry to generate a new solution s
         """
-        onOff = self.onOff
         self.solutionSchedule = []
         appliancePhaseIndex = 0
-        for i in onOff:
+        for i in self.onOff:
             if i == 1:
                 self.solutionSchedule.append(self.appliance.phases[appliancePhaseIndex])
                 appliancePhaseIndex += 1
@@ -126,14 +127,14 @@ def open_file(file):
         applianceArray = eval(f.readline())
     return Appliance(applianceName, applianceArray), Timings(timingArray)
 
-def task1(appliance, timing, numberOfRuns):
+def task1(appliance, timing, iterations):
     """
     This function takes an appliance, a timing (energy units cost per periods) and a number of runs, and gets a random solution with the appliance and times a given number of times, and returns the list of costs, the list of all generated solutions with the lowest cost, and the best cost.
     """
     ListOfCosts = []
     Cheapest = 10000000000
-    for i in range(numberOfRuns):
-        print("we are ", round(i / numberOfRuns * 100, 2 ), "percent complete")
+    for i in range(iterations + 1):
+        #print("we are ", round(i / numberOfRuns * 100, 2 ), "percent complete")
         tempSolution = Solution(appliance, timing)
         ListOfCosts.append(tempSolution.cost)
         if ListOfCosts[-1] < Cheapest: #checks if this is the new cheapest
@@ -142,9 +143,9 @@ def task1(appliance, timing, numberOfRuns):
             BestSchedules.append(tempSolution)  #saves the solution to the BestSchedules one
         if (ListOfCosts[-1]) == Cheapest: # if this is as cheap as another soln...
             BestSchedules.append(tempSolution)  # adds the new soln to the BestSchedule part
-    solutions = BestSchedules
+    best_solution = findBestSolution(BestSchedules)
     best_cost = min(ListOfCosts)    #i unsorted the list of costs so we can use the random selections in a graph later on
-    return ListOfCosts, solutions, best_cost
+    return ListOfCosts, best_solution
 
 def graph_task_1(ListOfCosts):
     """
@@ -156,11 +157,12 @@ def graph_task_1(ListOfCosts):
         FrequencyOfCosts.append(ListOfCosts.count(i))
     plt.xlabel("Cost")
     plt.ylabel("Frequency")
-    plt.bar(NoDuplicatesListOfCosts, FrequencyOfCosts, color = 'white')
-    plt.plot(NoDuplicatesListOfCosts, FrequencyOfCosts, color = 'grey')
+    plt.title("Distribution of costs of random solutions")
+    plt.bar(NoDuplicatesListOfCosts, FrequencyOfCosts, color = '#E85285')
+    plt.plot(NoDuplicatesListOfCosts, FrequencyOfCosts, color = '#6A1B9A')
     plt.show()
 
-def testForImprovements(solution):
+def testForImprovements1(solution):
     """
     This function swaps a one and a zero and sees if it gives a better cost then returns the best change found
     """
@@ -177,7 +179,6 @@ def testForImprovements(solution):
                 del tempSolution
 
     bestSoultion = findBestSolution(improvedSolutions)
-
     return bestSoultion 
 
 def testForImprovements2(solution):
@@ -320,13 +321,14 @@ def veryBasicSearch(solution, iterations):
     """
     This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
     """
-    currentSolution = solution
+    currentSolution = copy.deepcopy(solution)
     listOfCosts = [solution.cost]
     for i in range(iterations):
         neighbourSoultion = findNeighbour(currentSolution)
-        if neighbourSoultion.cost < currentSolution.cost:
+        if neighbourSoultion.cost <= currentSolution.cost:
             currentSolution = neighbourSoultion
         listOfCosts.append(currentSolution.cost)
+            
     return currentSolution, listOfCosts
 
 
@@ -412,24 +414,21 @@ def graph_iterations_of_small_improvements(solution, iterations, searchFunction)
     """
     Runs the testForImprovements function a given number of times, each time taking the new best solution, and then graphing the change in the cost against the iterations.
     """
-    startTime = time.time()
     bestSolution, costs = searchFunction(solution, iterations)
-    endTime = time.time()
-    print(f"It took {endTime - startTime} seconds to complete {iterations} iterations of this {searchFunction.__name__}")
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
+    plt.title(f"Iterations against small improvements")
     plt.plot(costs)
     plt.show()
     return bestSolution
 
-def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 1000):
+def graph_iterations_against_random_selection(solution, iterations = 1000):
     """
     Runs the function task1 to a given number of iterations, giving the improvements in costs over time, and then graphs it against the number of iterations.
     """
-    Appliance1, Timings1 = open_file(filename)
-    costs, schedules, best_cost = task1(Appliance1, Timings1, iterations)
+    costs, best_schedules = task1(solution.appliance, solution.timings, iterations)
     cheapest_cost = costs[0]
-    list_of_cheapest_costs = [] #this is a list that i can put the lowest costs in as they appear over iterations
+    list_of_cheapest_costs = []
     for i in costs:
         if i <= cheapest_cost:
             cheapest_cost = i
@@ -439,33 +438,74 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
+    plt.title("Iterations against costs from random selection solution")
     plt.plot(list_of_cheapest_costs)
     plt.show()
 
-#------------------------------------------------
-# End of code for functions and classes
+def graph_iterations_of_small_improvements_and_random_selection(solution, iterations, searchFunction):
+    """
+    This combines the 2 functions which plot their graphs of cost improvements against iteration to show a more direct comparison.
+    """
+    bestSearchSolution, search_costs = searchFunction(solution, iterations)
+    random_improving_costs, random_best_schedules = task1(solution.appliance, solution.timings, iterations)
+    cheapest_cost = random_improving_costs[0]
+    print(random_improving_costs[0])
+    print(search_costs[0])
+    list_of_cheapest_random_costs = [random_improving_costs[0]]
+    for i in random_improving_costs:
+        if i <= cheapest_cost:
+            cheapest_cost = i
+            list_of_cheapest_random_costs.append(i)
+        else:
+            list_of_cheapest_random_costs.append(cheapest_cost)
 
+    plt.subplots(figsize = (10, 7))
+    plt.xlabel("Number of Iterations")
+    plt.ylabel("Cost of Schedule")
+    plt.title(f"Improvements in cost over iterations between {searchFunction.__name__} and Random Selection")
+    plt.plot(search_costs, label = "Costs From Search Function")
+    plt.plot(list_of_cheapest_random_costs, label = "Costs From Random Generation")
+    plt.legend()
+    plt.show()
 
-testAppliance, testTimings = open_file("p3.txt")
-#costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
+#--------------------------------------------------------------------------------------------------------------------------------------------
+def print_task1(filename = "p2.txt", iterations = 100_000):
+    """
+    This is a function with all our print statements for completing task 1 in.
+    """
+    givenAppliance, givenTimings = open_file(filename)
+    givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
+    costs, best_solution = task1(givenAppliance, givenTimings, iterations)
 
-costList, randomSolutions , num = task1(testAppliance, testTimings, 100000)
+    print(best_solution)
+    graph_task_1(costs)
+    best_solution.graph()
 
-betterSolution = findBestSolution(randomSolutions)
-simulatedAnnealingSolution = graph_iterations_of_small_improvements(betterSolution, 1000, simulatedAnnealingSearch)
-hillClimbSolution = graph_iterations_of_small_improvements(betterSolution, 1000, veryBasicSearch)
-graph_2_different_solutions(simulatedAnnealingSolution, hillClimbSolution)
+def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = veryBasicSearch):
+    """
+    This is a function with all our print statements for completing task 2 in.
+    """
+    givenAppliance, givenTimings = open_file(filename)
+    givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
+    startTime1 = time.time()
+    basic_search_solution, list_of_costs = searchFunction(givenSolution, iterations)
+    endTime1 = time.time()
+    startTime2 = time.time()
+    listOfCosts, best_solution_task1 = task1(givenAppliance, givenTimings, iterations)
+    endTime2 = time.time()
+    print(f"It took {endTime2 - startTime2} seconds to complete {iterations} iterations of random solutions and the best solution found was {best_solution_task1}")
+    print(f"It took {endTime2 - startTime2} seconds to complete {iterations} iterations of this {searchFunction.__name__} and the best solution found was {basic_search_solution}")
+    
+    graph_2_different_solutions(best_solution_task1, basic_search_solution)     #this plots a graph with the best solution found from randomly generating solutions on the left and using the basic search algorithm on the right.
+    
+    graph_iterations_of_small_improvements_and_random_selection(givenSolution, iterations, searchFunction)
 
-print(f"The cost for the best simulated annealing is {simulatedAnnealingSolution.cost} and the best cost for hillClimb is {hillClimbSolution.cost}")
-#print(best_cost)
-#graph_task_1(costs)
-#print(schedules[0])
-#schedules[0].graph()
+#--------------------------------------------------------------------------------------------------------------------------------------------
 
+#print_task1(filename="p3.txt", iterations=100_000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
 
-#The things above this in comments are what you want to print off to complete task 1.
+#--------------------------------------------------------------------------------------------------------------------------------------------
 
-# The following is mostly random code to check if a thing is working, can be deleted if want, needs to be deleted before hand in
-#-------------------------------------------------------------------------------------------------------------------------------
+#print_task2(filename="p2.txt", iterations=1_000, searchFunction=veryBasicSearch)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and change the searchFunction between testForImprovements1, testForImprovements2, testForImprovements3 and veryBasicSearch and if needed you can change the iterations as well.
 
-
+#--------------------------------------------------------------------------------------------------------------------------------------------
