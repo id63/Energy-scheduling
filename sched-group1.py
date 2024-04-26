@@ -316,28 +316,45 @@ def findNeighbour(solution):
     tempSolution.calculateCost()
     return tempSolution
 
-def veryBasicSearch(solution):
+def veryBasicSearch(solution, iterations):
     """
     This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
     """
-    neighbourSoultion = findNeighbour(solution)
-    if neighbourSoultion.cost < solution.cost:
-        return neighbourSoultion
-    else:
-        return solution
+    currentSolution = solution
+    listOfCosts = [solution.cost]
+    for i in range(iterations):
+        neighbourSoultion = findNeighbour(currentSolution)
+        if neighbourSoultion.cost < currentSolution.cost:
+            currentSolution = neighbourSoultion
+        listOfCosts.append(currentSolution.cost)
+    return currentSolution, listOfCosts
 
 
 def simulatedAnnealingSearch(solution, iterations):
     """
     A local search function using a simulated annealing techinque 
     """
+    #Setting initial temperature conditions
     temperature = 1
     minTemperature = 0.0001
     alpha = 0.9
+    bestSolution = solution
+    currentSolution = solution
+    listOfCosts = [solution.cost]
+    
     while temperature > minTemperature:
         for i in range(iterations):
-            
-
+            if currentSolution.cost < bestSolution.cost:
+                bestSolution = solution
+            newSolution = findNeighbour(currentSolution)
+            acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost)/ temperature) #Calcuating the new acceptance probability for the new solution
+            if acceptanceProbability > random.uniform(0,1):
+                currentSolution = newSolution
+        
+        temperature *= alpha
+        listOfCosts.append(currentSolution.cost)
+    
+    return currentSolution, listOfCosts
 def findBestSolution(solutions):
     """
     Given a list of solutions, the function checks the costs of them all, and outputs the one with the lowest cost, and if there is more than one with that cost, outputs the first.
@@ -395,20 +412,15 @@ def graph_iterations_of_small_improvements(solution, iterations, searchFunction)
     """
     Runs the testForImprovements function a given number of times, each time taking the new best solution, and then graphing the change in the cost against the iterations.
     """
-    current_best_solution = solution
-    costs = [solution.cost]
     startTime = time.time()
-    for i in range(iterations + 1):
-        improved_solution = searchFunction(current_best_solution)
-        costs.append(improved_solution.cost)
-        current_best_solution = improved_solution
+    bestSolution, costs = searchFunction(solution, iterations)
     endTime = time.time()
     print(f"It took {endTime - startTime} seconds to complete {iterations} iterations of this {searchFunction.__name__}")
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
     plt.plot(costs)
     plt.show()
-    return current_best_solution
+    return bestSolution
 
 def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 1000):
     """
@@ -437,8 +449,14 @@ def graph_iterations_against_random_selection(filename = "p1.txt", iterations = 
 testAppliance, testTimings = open_file("p3.txt")
 #costs, schedules, best_cost = task1(testAppliance, testTimings, 100000)
 
-testSolution = Solution(testAppliance, testTimings)
+costList, randomSolutions , num = task1(testAppliance, testTimings, 100000)
 
+betterSolution = findBestSolution(randomSolutions)
+simulatedAnnealingSolution = graph_iterations_of_small_improvements(betterSolution, 1000, simulatedAnnealingSearch)
+hillClimbSolution = graph_iterations_of_small_improvements(betterSolution, 1000, veryBasicSearch)
+graph_2_different_solutions(simulatedAnnealingSolution, hillClimbSolution)
+
+print(f"The cost for the best simulated annealing is {simulatedAnnealingSolution.cost} and the best cost for hillClimb is {hillClimbSolution.cost}")
 #print(best_cost)
 #graph_task_1(costs)
 #print(schedules[0])
@@ -450,41 +468,4 @@ testSolution = Solution(testAppliance, testTimings)
 # The following is mostly random code to check if a thing is working, can be deleted if want, needs to be deleted before hand in
 #-------------------------------------------------------------------------------------------------------------------------------
 
-#solution1 = Solution(testAppliance, testTimings)
-#solution1.getBlockedOnOff()
 
-#print(solution1)
-#solution1.graph()
-
-#bestRandomSolution = findBestSolution(schedules)
-#completely_random_solution = Solution(testAppliance, testTimings)
-#testForImprovementsTwoBestSolution = graph_iterations_of_small_improvements(testSolution, 1000, testForImprovements2)
-#veryBasicSearchBestSolution = graph_iterations_of_small_improvements(testSolution, 10000, veryBasicSearch)
-#print(veryBasicSearchBestSolution.cost)
-#veryBasicSearchBestSolution.graph()
-#print(f"Testforimprovements2()'s best cost is {testForImprovementsTwoBestSolution.cost} and veryBasicSearch()'s best cost is {veryBasicSearchBestSolution.cost}")
-#graph_2_different_solutions(testForImprovementsTwoBestSolution, veryBasicSearchBestSolution)
-
-#bestFoundSolutionMethod1 = graph_iterations_of_small_improvements(bestRandomSolution, 1000)
-#random_through_small_changes_graph = graph_iterations_of_small_improvements(completely_random_solution, 1000)
-#graph_2_different_solutions(completely_random_solution, random_through_small_changes_graph)
-
-#graph_2_different_solutions(bestRandomSolution, bestFoundSolutionMethod1)
-
-#print(bestRandomSolution.cost, bestFoundSolutionMethod1.cost)
-
-
-#graph_iterations_against_random_selection("p2.txt", 100000)
-
-#solution1 = Solution(testAppliance, testTimings)
-#print(solution1)
-
-#solutions_from_solution1, best_cost_from_solution1 = testForImprovements3(solution1)
-#print(solutions_from_solution1)
-#print(best_cost_from_solution1)
-#best_solutions = findBestSolutions(solutions_from_solution1)
-#print(best_solutions)
-
-
-#print(solution1)
-#graph_2_different_solutions(solution1, best_solutions)
