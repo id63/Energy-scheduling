@@ -181,21 +181,30 @@ def testForImprovements1(solution):
     bestSoultion = findBestSolution(improvedSolutions)
     return bestSoultion 
 
-def testForImprovements2(solution):
+def bestNeighbourSearch(solution, iterations):
     """
     Prioritising the highest energy cost phase, this function attempts to swap 2 timings of the appliance to give a cheaper result.
     """
-    costOfElectricity = solution.timings.costPerPeriod
-    appliancePhases = solution.solutionSchedule
-    #Finding gaps in appliancePhases
-    findingGapsResult = findGaps(appliancePhases, costOfElectricity)
-    #Find the best swap
-    bestSwap = findBestCostFromSplitArray(findingGapsResult)
-    #Copying the solution and making the swap
-    newSolution = copy.deepcopy(solution)
-    newSolution.solutionSchedule[bestSwap["indexSwap"][0]] , newSolution.solutionSchedule[bestSwap["indexSwap"][1]] = newSolution.solutionSchedule[bestSwap["indexSwap"][1]], newSolution.solutionSchedule[bestSwap["indexSwap"][0]]
-    newSolution.calculateCost()
-    return newSolution
+    
+    listOfCosts = [solution.cost]
+    currentSolution = solution
+    for i in range(iterations):
+        #Finding gaps
+        costOfElectricity = currentSolution.timings.costPerPeriod
+        appliancePhases = currentSolution.solutionSchedule
+        #Finding gaps in appliancePhases
+        findingGapsResult = findGaps(appliancePhases, costOfElectricity)
+        #Find the best swap
+        bestSwap = findBestCostFromSplitArray(findingGapsResult)
+        #Copying the solution and making the swap
+        newSolution = copy.deepcopy(currentSolution)
+        newSolution.solutionSchedule[bestSwap["indexSwap"][0]] , newSolution.solutionSchedule[bestSwap["indexSwap"][1]] = newSolution.solutionSchedule[bestSwap["indexSwap"][1]], newSolution.solutionSchedule[bestSwap["indexSwap"][0]]
+        newSolution.calculateCost()
+        currentSolution = newSolution
+        listOfCosts.append(currentSolution.cost)
+    return currentSolution, listOfCosts
+
+    
 
 def findGaps(appliancePhases, electricityPrices):
     """
@@ -317,7 +326,7 @@ def findNeighbour(solution):
     tempSolution.calculateCost()
     return tempSolution
 
-def veryBasicSearch(solution, iterations):
+def hillClimbSearch(solution, iterations):
     """
     This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
     """
@@ -327,8 +336,7 @@ def veryBasicSearch(solution, iterations):
         neighbourSoultion = findNeighbour(currentSolution)
         if neighbourSoultion.cost <= currentSolution.cost:
             currentSolution = neighbourSoultion
-        listOfCosts.append(currentSolution.cost)
-            
+        listOfCosts.append(currentSolution.cost)       
     return currentSolution, listOfCosts
 
 
@@ -347,7 +355,7 @@ def simulatedAnnealingSearch(solution, iterations):
     while temperature > minTemperature:
         for i in range(iterations):
             if currentSolution.cost < bestSolution.cost:
-                bestSolution = solution
+                bestSolution = currentSolution
             newSolution = findNeighbour(currentSolution)
             acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost)/ temperature) #Calcuating the new acceptance probability for the new solution
             if acceptanceProbability > random.uniform(0,1):
@@ -356,7 +364,7 @@ def simulatedAnnealingSearch(solution, iterations):
         temperature *= alpha
         listOfCosts.append(currentSolution.cost)
     
-    return currentSolution, listOfCosts
+    return bestSolution, listOfCosts
 def findBestSolution(solutions):
     """
     Given a list of solutions, the function checks the costs of them all, and outputs the one with the lowest cost, and if there is more than one with that cost, outputs the first.
@@ -468,6 +476,24 @@ def graph_iterations_of_small_improvements_and_random_selection(solution, iterat
     plt.legend()
     plt.show()
 
+def graphTwoSoultionFinders(solution, iterations, searchFunction1, searchFunction2):
+    """
+    This combines the 2 functions which plot their graphs of cost improvements against iteration to show a more direct comparison.
+    """
+    bestSearchSolution, search_costs = searchFunction1(solution, iterations)
+    bestSearchSolution2, search_costs2 = searchFunction2(solution, iterations)
+
+    print(f"{searchFunction1.__name__} best solutions cost is {bestSearchSolution.cost} and {searchFunction2.__name__} best solution's cost is {bestSearchSolution2.cost}")
+    plt.subplots(figsize = (10, 7))
+    plt.xlabel("Number of Iterations")
+    plt.ylabel("Cost of Schedule")
+    plt.title(f"Improvements in cost over iterations between {searchFunction1.__name__} and {searchFunction2.__name__}")
+    plt.plot(search_costs, label = f"Costs From {searchFunction1.__name__}")
+    plt.plot(search_costs2, label = f"Costs From {searchFunction2.__name__}")
+    plt.legend()
+    plt.show()
+
+
 #--------------------------------------------------------------------------------------------------------------------------------------------
 def print_task1(filename = "p2.txt", iterations = 100_000):
     """
@@ -481,7 +507,7 @@ def print_task1(filename = "p2.txt", iterations = 100_000):
     graph_task_1(costs)
     best_solution.graph()
 
-def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = veryBasicSearch):
+def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = hillClimbSearch):
     """
     This is a function with all our print statements for completing task 2 in.
     """
@@ -493,7 +519,7 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = veryBa
     startTime2 = time.time()
     listOfCosts, best_solution_task1 = task1(givenAppliance, givenTimings, iterations)
     endTime2 = time.time()
-    print(f"It took {endTime2 - startTime2} seconds to complete {iterations} iterations of random solutions and the best solution found was {best_solution_task1}")
+    print(f"It took {endTime2 - startTime2} seconds to generate {iterations}  random solutions and the best solution found was {best_solution_task1}")
     print(f"It took {endTime2 - startTime2} seconds to complete {iterations} iterations of this {searchFunction.__name__} and the best solution found was {basic_search_solution}")
     
     graph_2_different_solutions(best_solution_task1, basic_search_solution)     #this plots a graph with the best solution found from randomly generating solutions on the left and using the basic search algorithm on the right.
@@ -506,6 +532,10 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = veryBa
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
-#print_task2(filename="p2.txt", iterations=1_000, searchFunction=veryBasicSearch)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and change the searchFunction between testForImprovements1, testForImprovements2, testForImprovements3 and veryBasicSearch and if needed you can change the iterations as well.
+#print_task2(filename="p2.txt", iterations=1_000, searchFunction=hillClimbSearch)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and change the searchFunction between testForImprovements1, testForImprovements2, testForImprovements3 and veryBasicSearch and if needed you can change the iterations as well.
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
+
+testAppliance, testTimings = open_file("p3.txt")
+testSolution = Solution(testAppliance, testTimings)
+graphTwoSoultionFinders(testSolution, 100, simulatedAnnealingSearch, hillClimbSearch)
