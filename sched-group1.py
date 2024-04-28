@@ -528,7 +528,7 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = hillCl
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
-#print_task1(filename="p3.txt", iterations=100_000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
+#print_task1(filename="p3.txt", iterations=100000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -536,6 +536,52 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = hillCl
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
-testAppliance, testTimings = open_file("p3.txt")
-testSolution = Solution(testAppliance, testTimings)
-graphTwoSoultionFinders(testSolution, 100, simulatedAnnealingSearch, hillClimbSearch)
+#testAppliance, testTimings = open_file("p3.txt")
+#testSolution = Solution(testAppliance, testTimings)
+#graphTwoSoultionFinders(testSolution, 100, simulatedAnnealingSearch, hillClimbSearch)
+
+
+def time_of_function(filename = "p2.txt", iterations = 10_000, searchFunction1 = hillClimbSearch, number_of_mean_repeats = 20):
+    """
+    This function will calculate the average time a function takes to complete in the document p3. The code is largely copied from the code for task 2, but tweaked to show the information we want instead.
+    """
+    for i in range(number_of_mean_repeats):
+        print(f"we are {i} repeats in.")
+        givenAppliance, givenTimings = open_file(filename)
+        givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
+        startTime1 = time.time()
+        basic_search_solution, list_of_costs = searchFunction1(givenSolution, iterations)
+        endTime1 = time.time()
+        startTime2 = time.time()
+        listOfCosts, best_solution_task1 = task1(givenAppliance, givenTimings, iterations)
+        endTime2 = time.time()
+        sum_time_to_complete =+ (endTime1 - startTime1)
+        sum_time_to_complete2 =+ (endTime2 - startTime2)
+    mean_time_to_complete = sum_time_to_complete/number_of_mean_repeats
+    mean_time_to_complete2 = sum_time_to_complete2/number_of_mean_repeats
+
+    short_iterations = math.floor(iterations / 10)
+
+#this bit runs it to 1/10 of the repeats so we can compare the scalability of the function.
+    for j in range(number_of_mean_repeats):
+        print(f"we are {j} repeats into the shorter iterations.")
+        givenAppliance, givenTimings = open_file(filename)
+        givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
+        startTime1b = time.time()
+        basic_search_solution, list_of_costs = searchFunction1(givenSolution, short_iterations)
+        endTime1b = time.time()
+        startTime2b = time.time()
+        listOfCosts, best_solution_task1 = task1(givenAppliance, givenTimings, short_iterations)
+        endTime2b = time.time()
+        sum_time_to_completeb =+ (endTime1b - startTime1b)
+        sum_time_to_complete2b =+ (endTime2b - startTime2b)
+    mean_time_to_completeb = sum_time_to_completeb/number_of_mean_repeats
+    mean_time_to_complete2b = sum_time_to_complete2b/number_of_mean_repeats
+    print(f"It took a mean time of {mean_time_to_complete} seconds to complete {searchFunction1} to {iterations} iterations with the mean of {number_of_mean_repeats} tries calculated. The first 10% of the iterations took {mean_time_to_completeb/mean_time_to_complete * 100}% of the time.")
+    print(f"It took a mean time of {mean_time_to_complete2} seconds to complete task 1's random function to {iterations} iterations with the mean of {number_of_mean_repeats} tries calculated. The first 10% of the iterations took {mean_time_to_complete2b/mean_time_to_complete2 * 100}% of the time.")
+    #print(f"It took a mean time of {mean_time_to_complete3} seconds to complete {searchFunction2} to {iterations} iterations with the mean of {number_of_mean_repeats} tries calculated")
+    #graph_2_different_solutions(best_solution_task1, basic_search_solution)     #this plots a graph with the best solution found from randomly generating solutions on the left and using the basic search algorithm on the right.
+    
+    #graph_iterations_of_small_improvements_and_random_selection(givenSolution, iterations, searchFunction1)
+
+time_of_function(filename = "p2.txt", iterations = 10_000, searchFunction1 = hillClimbSearch, number_of_mean_repeats = 50)
