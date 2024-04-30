@@ -627,3 +627,12 @@ def run_final_inputs():
         print_task2(filename = chosen_file, iterations = chosen_iterations, searchFunction = chosen_search_function)
 
 run_final_inputs()
+
+
+def hybrid_function(iterations1, iterations2, searchFunction1, searchFunction2, filename = "p2.txt"):
+    givenAppliance, givenTimings = open_file(filename)
+    givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
+    hybrid_part_a, search_costs = searchFunction1(givenSolution, iterations1)
+    hybrid_part_b, search_costs2 = searchFunction2(hybrid_part_a, iterations2)
+    return hybrid_part_b, search_costs + search_costs2
+    
