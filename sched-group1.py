@@ -8,13 +8,13 @@ class Appliance():
     """
     This class simulates a household appliance, with a name and phases of a cycle.
     """
-    def __init__(self, name, phases):
-        self.name = name
+    def __init__(self, phases):
+
         self.phases = phases
         self.ScheduleLength = len(phases)
 
     def __repr__(self):
-        return f"This appliance is a {self.name} and  has a schedule length of {self.ScheduleLength}\n The schedule is {self.phases}"
+        return f"This appliance is and has a schedule length of {self.ScheduleLength}\n The schedule is {self.phases}"
 
 class Timings():
     """
@@ -115,7 +115,7 @@ class Solution():
         plt.show()
 
     def __repr__(self):
-        return f"This is a solution for the appliance {self.appliance.name}, with timings for use {self.solutionSchedule} which has a cost of {self.cost}"
+        return f"This is a solution for an appliance with timings for use {self.solutionSchedule} which has a cost of {self.cost}"
 
 def open_file(file):
     """
@@ -123,9 +123,8 @@ def open_file(file):
     """
     with open(file, 'r') as f:
         timingArray = eval(f.readline())
-        applianceName = f.readline()
         applianceArray = eval(f.readline())
-    return Appliance(applianceName, applianceArray), Timings(timingArray)
+    return Appliance(applianceArray), Timings(timingArray)
 
 def task1(appliance, timing, iterations):
     """
@@ -357,12 +356,13 @@ def simulatedAnnealingSearch(solution, iterations):
             if currentSolution.cost < bestSolution.cost:
                 bestSolution = currentSolution
             newSolution = findNeighbour(currentSolution)
-            acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost)/ temperature) #Calcuating the new acceptance probability for the new solution
+            acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost)/ 1000 * temperature) #Calcuating the new acceptance probability for the new solution
+            
             if acceptanceProbability > random.uniform(0,1):
                 currentSolution = newSolution
-        
+            listOfCosts.append(currentSolution.cost)
         temperature *= alpha
-        listOfCosts.append(currentSolution.cost)
+        #listOfCosts.append(currentSolution.cost)
     
     return bestSolution, listOfCosts
 def findBestSolution(solutions):
@@ -494,6 +494,35 @@ def graphTwoSoultionFinders(solution, iterations, searchFunction1, searchFunctio
     plt.show()
 
 
+
+#This function
+def compareTimeEfficency(solution, searchFunction1):
+    """
+    This function is used to find out the time efficency of different search functions by increasing the number of iterations by 10tefold 6 times
+    """
+    iterationsNum = 1
+    searchFunction1timings = []
+    searchFunction2timings = []
+    searchFunction3timings = []
+    while iterationsNum < 100:
+        startTime1 = time.time()
+        searchFunction1(solution, iterationsNum)
+        endTime1 = time.time()
+        searchFunction1timings.append(endTime1 - startTime1)
+        
+        iterationsNum += 1 #Increasing the number of iterations tenfold
+    
+    
+    plt.subplots(figsize = (10, 7))
+    plt.xlabel("Number of iterations")
+    plt.ylabel("Time Taken to complete function")
+    plt.title(f"")
+    plt.plot(searchFunction1timings, label = f"Time to complete {searchFunction1.__name__}")
+    plt.legend()
+    plt.show()
+
+
+
 #--------------------------------------------------------------------------------------------------------------------------------------------
 def print_task1(filename = "p2.txt", iterations = 100_000):
     """
@@ -528,14 +557,10 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = hillCl
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
-#print_task1(filename="p3.txt", iterations=100_000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
+print_task1(filename="p2.txt", iterations=10_000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
 #print_task2(filename="p2.txt", iterations=1_000, searchFunction=hillClimbSearch)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and change the searchFunction between testForImprovements1, testForImprovements2, testForImprovements3 and veryBasicSearch and if needed you can change the iterations as well.
 
 #--------------------------------------------------------------------------------------------------------------------------------------------
-
-testAppliance, testTimings = open_file("p3.txt")
-testSolution = Solution(testAppliance, testTimings)
-graphTwoSoultionFinders(testSolution, 100, simulatedAnnealingSearch, hillClimbSearch)
