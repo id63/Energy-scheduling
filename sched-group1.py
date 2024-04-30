@@ -174,11 +174,9 @@ def testForImprovements1(solution):
             tempSolution.calculateCost()
             if tempSolution.cost < solution.cost:
                 improvedSolutions.append(tempSolution)
-            else:
                 del tempSolution
-
     bestSoultion = findBestSolution(improvedSolutions)
-    return bestSoultion 
+    return bestSoultion
 
 def bestNeighbourSearch(solution, iterations):
     """
@@ -288,7 +286,7 @@ def testForImprovements3(solution):
             while current_solution.solutionSchedule[required_index + k] == 0:
                 current_solution.solutionSchedule[required_index + k], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index + k]
                 current_solution.calculateCost()
-                if current_solution.cost <= best_cost:
+                if current_solution.cost < best_cost:
                     improved_solutions.append(current_solution)
                     best_cost = current_solution.cost
                 current_solution = copy.deepcopy(solution)  #resetting the solution back to original so we can run it again checking each different branch for the cheapest solution
@@ -300,16 +298,51 @@ def testForImprovements3(solution):
             while current_solution.solutionSchedule[required_index - k] == 0:
                 current_solution.solutionSchedule[required_index - k], current_solution.solutionSchedule[required_index] = current_solution.solutionSchedule[required_index], current_solution.solutionSchedule[required_index - k]
                 current_solution.calculateCost()
-                if current_solution.cost <= best_cost:
+                if current_solution.cost < best_cost:
                     improved_solutions.append(current_solution)
                     best_cost = current_solution.cost
                 current_solution = copy.deepcopy(solution)  #resetting the solution back to original so we can run it again checking each different branch for the cheapest solution
                 k += 1
                 if (required_index - k) < 0:    #fixes it trying to find things outside of the list when we change k
                     break
-    
     bestSolutionFound = findBestSolution(improved_solutions)
     return bestSolutionFound
+
+def testForImprovements1Iterations(solution, iterations):
+    """
+    A function to run test for improvements 1 to a specified number of iterations.
+    """
+    list_of_costs = [solution.cost]
+    start_time = time.time()
+    current_solution = copy.deepcopy(solution)
+    for i in range(iterations):
+        best_solution = testForImprovements1(current_solution)
+        if best_solution.cost < current_solution.cost:
+            list_of_costs.append(best_solution.cost)
+            current_solution = best_solution
+        else:
+            list_of_costs.append(min(list_of_costs))
+    end_time = time.time()
+    print(f"testFOrImprovements1 took {end_time - start_time} seconds to run {iterations} iterations and gave a best solution {current_solution}")
+    return current_solution, list_of_costs
+
+def testForImprovements3Iterations(solution, iterations):
+    """
+    A function to run test for improvements 3 to a specified number of iterations.
+    """
+    list_of_costs = [solution.cost]
+    start_time = time.time()
+    current_solution = copy.deepcopy(solution)
+    for i in range(iterations):
+        best_solution = testForImprovements3(current_solution)
+        if best_solution.cost < current_solution.cost:
+            list_of_costs.append(best_solution.cost)
+            current_solution = best_solution
+        else:
+            list_of_costs.append(min(list_of_costs))
+    end_time = time.time()
+    print(f"testFOrImprovements3 took {end_time - start_time} seconds to run {iterations} iterations and gave a best solution {current_solution}")
+    return current_solution, list_of_costs
 
 def findNeighbour(solution):
     """
@@ -329,14 +362,18 @@ def hillClimbSearch(solution, iterations):
     """
     This is an increbilily basic local search algorithm for finding a better solution. It does this by swapping a 1 and 0 then recaluating the cost and excepts it if its better.
     """
+    start_time = time.time()
     currentSolution = copy.deepcopy(solution)
     listOfCosts = [solution.cost]
     for i in range(iterations):
         neighbourSoultion = findNeighbour(currentSolution)
         if neighbourSoultion.cost <= currentSolution.cost:
             currentSolution = neighbourSoultion
-        listOfCosts.append(currentSolution.cost)       
+        listOfCosts.append(currentSolution.cost)   
+    end_time = time.time()
+    print(f"hillClimbSearch took {end_time - start_time} seconds to run {iterations} iterations and gave a best solution of {currentSolution}") 
     return currentSolution, listOfCosts
+
 
 
 def simulatedAnnealingSearch(solution, iterations):
@@ -350,21 +387,21 @@ def simulatedAnnealingSearch(solution, iterations):
     bestSolution = solution
     currentSolution = solution
     listOfCosts = [solution.cost]
-    
+    start_time = time.time()
     while temperature > minTemperature:
         for i in range(iterations):
             if currentSolution.cost < bestSolution.cost:
                 bestSolution = currentSolution
             newSolution = findNeighbour(currentSolution)
-            acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost)/ 1000 * temperature) #Calcuating the new acceptance probability for the new solution
-            
+            acceptanceProbability = math.exp((currentSolution.cost - newSolution.cost) / temperature) #Calcuating the new acceptance probability for the new solution
             if acceptanceProbability > random.uniform(0,1):
                 currentSolution = newSolution
-            listOfCosts.append(currentSolution.cost)
         temperature *= alpha
-        #listOfCosts.append(currentSolution.cost)
-    
+        listOfCosts.append(currentSolution.cost)
+    end_time = time.time()
+    print(f"simulatedAnnealingSearch took {end_time - start_time} seconds to run {iterations} iterations and gave a best solution of {bestSolution}")
     return bestSolution, listOfCosts
+
 def findBestSolution(solutions):
     """
     Given a list of solutions, the function checks the costs of them all, and outputs the one with the lowest cost, and if there is more than one with that cost, outputs the first.
@@ -415,7 +452,6 @@ def graph_2_different_solutions(solution1, solution2):
     ax_2.set_xlabel("Time Period")
     ax_2.set_ylabel("Units Required")
     ax_2b.set_ylabel("Cost Per Unit")
-
     plt.show()
 
 def graph_iterations_of_small_improvements(solution, iterations, searchFunction):
@@ -457,8 +493,6 @@ def graph_iterations_of_small_improvements_and_random_selection(solution, iterat
     bestSearchSolution, search_costs = searchFunction(solution, iterations)
     random_improving_costs, random_best_schedules = task1(solution.appliance, solution.timings, iterations)
     cheapest_cost = random_improving_costs[0]
-    print(random_improving_costs[0])
-    print(search_costs[0])
     list_of_cheapest_random_costs = [random_improving_costs[0]]
     for i in random_improving_costs:
         if i <= cheapest_cost:
@@ -471,7 +505,7 @@ def graph_iterations_of_small_improvements_and_random_selection(solution, iterat
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
     plt.title(f"Improvements in cost over iterations between {searchFunction.__name__} and Random Selection")
-    plt.plot(search_costs, label = "Costs From Search Function")
+    plt.plot(search_costs, label = f"Costs From {searchFunction.__name__}")
     plt.plot(list_of_cheapest_random_costs, label = "Costs From Random Generation")
     plt.legend()
     plt.show()
@@ -483,7 +517,7 @@ def graphTwoSoultionFinders(solution, iterations, searchFunction1, searchFunctio
     bestSearchSolution, search_costs = searchFunction1(solution, iterations)
     bestSearchSolution2, search_costs2 = searchFunction2(solution, iterations)
 
-    print(f"{searchFunction1.__name__} best solutions cost is {bestSearchSolution.cost} and {searchFunction2.__name__} best solution's cost is {bestSearchSolution2.cost}")
+    #print(f"{searchFunction1.__name__} best solutions cost is {bestSearchSolution.cost} and {searchFunction2.__name__} best solution's cost is {bestSearchSolution2.cost}")
     plt.subplots(figsize = (10, 7))
     plt.xlabel("Number of Iterations")
     plt.ylabel("Cost of Schedule")
@@ -521,9 +555,8 @@ def compareTimeEfficency(solution, searchFunction1):
     plt.legend()
     plt.show()
 
-
-
 #--------------------------------------------------------------------------------------------------------------------------------------------
+
 def print_task1(filename = "p2.txt", iterations = 100_000):
     """
     This is a function with all our print statements for completing task 1 in.
@@ -542,25 +575,55 @@ def print_task2(filename = "p2.txt", iterations = 1_000, searchFunction = hillCl
     """
     givenAppliance, givenTimings = open_file(filename)
     givenSolution = Solution(givenAppliance, givenTimings, shuffle = True)
-    startTime1 = time.time()
     basic_search_solution, list_of_costs = searchFunction(givenSolution, iterations)
-    endTime1 = time.time()
-    startTime2 = time.time()
     listOfCosts, best_solution_task1 = task1(givenAppliance, givenTimings, iterations)
-    endTime2 = time.time()
-    print(f"It took {endTime2 - startTime2} seconds to generate {iterations}  random solutions and the best solution found was {best_solution_task1}")
-    print(f"It took {endTime2 - startTime2} seconds to complete {iterations} iterations of this {searchFunction.__name__} and the best solution found was {basic_search_solution}")
     
     graph_2_different_solutions(best_solution_task1, basic_search_solution)     #this plots a graph with the best solution found from randomly generating solutions on the left and using the basic search algorithm on the right.
     
     graph_iterations_of_small_improvements_and_random_selection(givenSolution, iterations, searchFunction)
 
+def print_task3(filename = "p3.txt", iterations = 100):
+    """
+    
+    """
 #--------------------------------------------------------------------------------------------------------------------------------------------
 
-print_task1(filename="p2.txt", iterations=10_000)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and if needed you can change the iterations as well.
+def run_final_inputs():
+    """
+    A function to ask for inputs fomr the user and give the desired answers for task 1, task 2 and task 3.
+    """
+    chosen_task = int(input("Choose a task to run, type 1 for task 1, 2 for task 2 and 3 for task 3 >>> "))
+    chosen_file = int(input(f"Choose a file to run for {chosen_task}, type 1 for p1.txt, 2 for p2.txt and 3 for p3.txt >>> "))
 
-#--------------------------------------------------------------------------------------------------------------------------------------------
+    if chosen_task == 1:
+        chosen_iterations = int(input("Choose a number of iterations to run this to, recommended is 100,000 >>> "))
+    if chosen_task  == 2:
+        chosen_search_function = int(input("Choose a function to compare against random selection, type 1 for testForImprovements3, 2 for hillClimbSearch, 3 for simulatedAnnealingSearch >>> "))
 
-#print_task2(filename="p2.txt", iterations=1_000, searchFunction=hillClimbSearch)      #change the filename between "p1.txt", "p2.txt" and "p3.txt" for each problem, and change the searchFunction between testForImprovements1, testForImprovements2, testForImprovements3 and veryBasicSearch and if needed you can change the iterations as well.
+        if chosen_search_function == 3 or chosen_search_function == 1:
+            chosen_iterations = int(input("Choose a number of iterations to run this to, recommended is 100 >>> "))
+        else:
+            chosen_iterations = int(input("Choose a number of iterations to run this to, recommended is 1,000 >>> "))
+    if chosen_task == 3:
+        pass
 
-#--------------------------------------------------------------------------------------------------------------------------------------------
+    if chosen_search_function == 1:
+        chosen_search_function = testForImprovements3Iterations
+    if chosen_search_function == 2:
+        chosen_search_function = hillClimbSearch
+    if chosen_search_function == 3:
+        chosen_search_function = simulatedAnnealingSearch
+
+    if chosen_file == 1:
+        chosen_file = "p1.txt"
+    if chosen_file == 2:
+        chosen_file = "p2.txt"
+    if chosen_file == 3:
+        chosen_file = "p3.txt"
+
+    if chosen_task == 1:
+        print_task1(filename = chosen_file, iterations = chosen_iterations)
+    if chosen_task == 2:
+        print_task2(filename = chosen_file, iterations = chosen_iterations, searchFunction = chosen_search_function)
+
+run_final_inputs()
